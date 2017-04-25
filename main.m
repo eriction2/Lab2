@@ -20,19 +20,19 @@ vx_m.signals.values = vx_VBOX-ry*yawRate_VBOX;
 sim measurments
 
 %Wash-out
-T = 0.7;
+T = 1;
 vy_mod_m.time = Time;
 vy_mod_m.signals.values = vy_mod;
 sim washout
 
-plot(Time,vy_mod,'Color','r','LineWidth',1.5);
+plot(Time,vy_mod,'Color','r','LineWidth',1.5,'DisplayName','v_y^{mod}');
 hold on;
 grid on;
-plot(vy_kin.time,vy_kin.Data,'Color','b','LineWidth',1.5);
-plot(vy_wo.time,vy_wo.Data,'Color','y','LineWidth',1.5);
-plot(Time,vy_VBOX+rx.*yawRate_VBOX,'Color','g','LineWidth',1.5);
+plot(vy_kin.time,vy_kin.Data,'Color','b','LineWidth',1.5,'DisplayName','v_y^{kin}');
+plot(vy_wo.time,vy_wo.Data,'Color','y','LineWidth',1.5,'DisplayName','Washout');
+plot(Time,vy_VBOX+rx.*yawRate_VBOX,'Color','g','LineWidth',1.5,'DisplayName','True');
 
-
+legend('show');
 
 
 %%
