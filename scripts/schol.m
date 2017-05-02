@@ -20,7 +20,7 @@
 % See also
 %   CHOL
 
-% Copyright (C) 2006 Simo Särkkä
+% Copyright (C) 2006 Simo Sï¿½rkkï¿½
 %
 % $Id: schol.m 111 2007-09-04 12:09:23Z ssarkka $
 %

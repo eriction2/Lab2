@@ -19,8 +19,8 @@ global lf lr Cf Cr mass Iz vbox_file_name
 %----------------------------
 %vbox_file_name='logged_data/Lunda_test_140411/Stand_Still_no2.VBO'; %stand still logging, engine running
 %vbox_file_name='logged_data/Lunda_test_140411/Circle_left_R13m_no2.VBO'; %circle test left, roughly 13m in radius
-%vbox_file_name='logged_data/Lunda_test_140411/Slalom_35kph.VBO'; %slalom entry to the left @ first cone, 35kph
-vbox_file_name='logged_data/Lunda_test_140411/Step_Steer_left_80kph.VBO'; %Step steer to the left in 80kph
+vbox_file_name='logged_data/Lunda_test_140411/Slalom_35kph.VBO'; %slalom entry to the left @ first cone, 35kph
+%vbox_file_name='logged_data/Lunda_test_140411/Step_Steer_left_80kph.VBO'; %Step steer to the left in 80kph
 %vbox_file_name='logged_data/Lunda_test_140411/SWD_80kph.VBO'; %Sine with dwell, first turn to the right, 80kph
 
 vboload
@@ -128,13 +128,13 @@ dt = Time(2)-Time(1);
 Q=0.1*diag(3);
 
 % Use as starting value 0.01 for each of the measurements in R matrix
-R=0.01*diag(3);
+R=0.1*diag(3);
 
 %--------------------------------------------------
 % SET INITIAL STATE AND STATE ESTIMATION COVARIANCE
 %--------------------------------------------------
-x_0=[1;0;0];
-P_0= eye(3);%[1 1 1;1 1 1;1 1 1];
+x_0=[0;0;0];
+P_0= 1*eye(3);
 
 
 %-----------------------
@@ -157,19 +157,15 @@ disp('Filtering the signal with UKF...');
 
 M = x_0;
 P = P_0;
-vx = [];
-vy = [];
-
 
 for i = 2:n
 
 
     % ad your predict and update functions, see the scripts ukf_predict1.m
     % and ukf_update1.m
-    predictParam.delta = SWA_VBOX(i);
     Y = [vx_VBOX(i);ay_VBOX(i);yawRate_VBOX(i)];
-    [M,P] = ukf_predict1(M,P,state_func_UKF,Q,predictParam);%,alpha,beta,kappa,0);
-    [M,P,K,MU,S,LH] = ukf_update1(M,P,Y,meas_func_UKF,R,predictParam);%,alpha,beta,kappa,0);
+    [M,P] = ukf_predict1(M,P,state_func_UKF,Q,[SWA_VBOX(i);dt]);%,alpha,beta,kappa,0);
+    [M,P,K,MU,S,LH] = ukf_update1(M,P,Y,meas_func_UKF,R,[SWA_VBOX(i);dt]);%,alpha,beta,kappa,0);
 
     
     
@@ -188,38 +184,23 @@ for i = 2:n
         disp('3/4 of the filtering done... Stay tuned for the results...');
         disp(' ');
     end
-    
-    vx = [vx;M(1,:)];
-    vy = [vy;M(2,:)];
 end
 
 %----------------------------------------
 % CALCULATE THE SLIP ANGLE OF THE VEHICLE
 %----------------------------------------
-mybeta = atan(vy./vx);
+
 
 %---------------------------------------------------------
 % CALCULATE THE ERROR VALES FOR THE ESTIMATE OF SLIP ANGLE
 %---------------------------------------------------------
-%Beta_VBOX_smooth=smooth(Beta_VBOX,0.01,'rlowess'); 
-%[e_beta_mean,e_beta_max,time_at_max,error] = errorCalc('YOUR BETA',Beta_VBOX_smooth);
-%disp(' ');
-%fprintf('The MSE of Beta estimation is: %d \n',e_beta_mean);
-%fprintf('The Max error of Beta estimation is: %d \n',e_beta_max);
+Beta_VBOX_smooth=smooth(Beta_VBOX,0.01,'rlowess'); 
+%[e_beta_mean,e_beta_max,time_at_max,error] = errorCalc(YOUR BETA',Beta_VBOX_smooth);
+disp(' ');
+fprintf('The MSE of Beta estimation is: %d \n',e_beta_mean);
+fprintf('The Max error of Beta estimation is: %d \n',e_beta_max);
 
 %-----------------
 % PLOT THE RESULTS
 %-----------------
-if 1
-    plot(Time,Beta_VBOX,'Color','g','LineWidth',1.5,'DisplayName','True');
-    hold on;
-    grid on;
-    %plot(Time,beta_mod,'Color','b','LineWidth',1.5,'DisplayName','beta^{mod} new');
-    %plot(Time,beta_mod2,'Color','c','LineWidth',1.5,'DisplayName','beta^{mod} old');
-    %plot(vy_kin.time,beta_kin.Data,'Color','m','LineWidth',1.5,'DisplayName','beta^{kin}');
-    plot(Time(1:end-1),mybeta,'Color','r','LineWidth',1.5,'DisplayName','UKF');
-    xlim([0,Time(end)])
-    legend('show','Location','NorthWest');
-    xlabel('Time [sec]');
-    ylabel('Slip [1]');
-end
+
