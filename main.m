@@ -1,7 +1,5 @@
 %%
 clear all
-clf
-close all
 
 
 
@@ -35,13 +33,13 @@ sim measurments
 SWA_m.time = Time;
 SWA_m.signals.values = SWA;
 
-T = 0.4;
-K_yaw_diff = 0;
-K_smooth = 0.1;
-K_smooth_2 = 10;
-squared = 1;
+T = 0.4*1.5;
+K_yaw_diff = 0.15*10;
+K_smooth = 1*10;%10 for circle
+K_smooth_2 = 0.5*10;
 vy_mod_m.time = Time;
 vy_mod_m.signals.values = vy_mod;
+infl_yaw = 2*5;
 
 
 sim washout
@@ -54,9 +52,9 @@ if 1
     plot(Time,Beta_VBOX,'Color','g','LineWidth',1.5,'DisplayName','True');
     hold on;
     grid on;
-    plot(Time,beta_mod,'Color','b','LineWidth',1.5,'DisplayName','beta^{mod} new');
+    %plot(Time,beta_mod,'Color','b','LineWidth',1.5,'DisplayName','beta^{mod} new');
     %plot(Time,beta_mod2,'Color','c','LineWidth',1.5,'DisplayName','beta^{mod} old');
-    plot(vy_kin.time,beta_kin.Data,'Color','m','LineWidth',1.5,'DisplayName','beta^{kin}');
+    %plot(vy_kin.time,beta_kin.Data,'Color','m','LineWidth',1.5,'DisplayName','beta^{kin}');
     plot(vy_wo.time,beta_wo.Data,'Color','r','LineWidth',1.5,'DisplayName','Washout');
     xlim([0,Time(end)])
     legend('show','Location','NorthWest');
