@@ -58,6 +58,6 @@ function [L,def] = schol(A)
   end
   
   if (nargout < 2) & (def < 0)
-    warning('Matrix is negative definite !!!!');
+%    warning('Matrix is negative definite !!!!');
   end
 

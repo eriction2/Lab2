@@ -17,10 +17,10 @@ global lf lr Cf Cr mass Iz vbox_file_name
 %----------------------------
 % LOAD DATA FROM VBOX SYSTEM
 %----------------------------
-%vbox_file_name='logged_data/Lunda_test_140411/Stand_Still_no2.VBO'; %stand still logging, engine running
+vbox_file_name='logged_data/Lunda_test_140411/Stand_Still_no2.VBO'; %stand still logging, engine running
 %vbox_file_name='logged_data/Lunda_test_140411/Circle_left_R13m_no2.VBO'; %circle test left, roughly 13m in radius
 %vbox_file_name='logged_data/Lunda_test_140411/Slalom_35kph.VBO'; %slalom entry to the left @ first cone, 35kph
-vbox_file_name='logged_data/Lunda_test_140411/Step_Steer_left_80kph.VBO'; %Step steer to the left in 80kph
+%vbox_file_name='logged_data/Lunda_test_140411/Step_Steer_left_80kph.VBO'; %Step steer to the left in 80kph
 %vbox_file_name='logged_data/Lunda_test_140411/SWD_80kph.VBO'; %Sine with dwell, first turn to the right, 80kph
 
 vboload
@@ -125,16 +125,21 @@ dt = Time(2)-Time(1);
 % SET MEASUREMENT AND PROCESS NOICE COVARIANCES
 %----------------------------------------------
 % Use as starting value 0.1 for each of the states in Q matrix
-Q=0.1*diag(3);
+Q=[ 0.1 0   0;
+    0   0.1 0;
+    0   0   0.1];
 
 % Use as starting value 0.01 for each of the measurements in R matrix
-R=0.01*diag(3);
+R=[ 0.01 0   0;
+    0   0.01 0;
+    0   0   0.01];
+
 
 %--------------------------------------------------
 % SET INITIAL STATE AND STATE ESTIMATION COVARIANCE
 %--------------------------------------------------
-x_0=[1;0;0];
-P_0= eye(3);%[1 1 1;1 1 1;1 1 1];
+x_0=[vx_VBOX(1);0;yawRate_VBOX(1)];
+P_0= 0.1*eye(3);%[1 1 1;1 1 1;1 1 1];
 
 
 %-----------------------
@@ -167,7 +172,7 @@ for i = 2:n
     % ad your predict and update functions, see the scripts ukf_predict1.m
     % and ukf_update1.m
     predictParam.delta = SWA_VBOX(i);
-    Y = [vx_VBOX(i);ay_VBOX(i);yawRate_VBOX(i)];
+    Y = [vx_VBOX(i);ay_VBOX(i)+rx*yawRate_VBOX(i);yawRate_VBOX(i)];
     [M,P] = ukf_predict1(M,P,state_func_UKF,Q,predictParam);%,alpha,beta,kappa,0);
     [M,P,K,MU,S,LH] = ukf_update1(M,P,Y,meas_func_UKF,R,predictParam);%,alpha,beta,kappa,0);
 
@@ -198,26 +203,64 @@ end
 %----------------------------------------
 mybeta = atan(vy./vx);
 
+%Estimation
+%Init_for_washout_filter
+vx2 = vx_VBOX;
+SWA = SWA_VBOX;
+vy_mod = vx2.*(lr*(lf+lr)*Cf*Cr-lf*Cf*mass.*vx2.*vx2)./(((lf+lr)^2*Cr*Cf+mass.*vx2.*vx2*(lr*Cr-lf*Cf))).*SWA;
+beta_mod = atan(vy_mod./vx_VBOX);
+
+
+%Measurment
+ay_m.time = Time;
+ay_m.signals.values = ay_VBOX;%+rx.*yawRate_VBOX;
+yawRate_m.time = Time;
+yawRate_m.signals.values = yawRate_VBOX;
+vx_m.time = Time;
+vx_m.signals.values = vx_VBOX;%-ry*yawRate_VBOX;
+sim measurments
+
+%Wash-out
+%T = abs((yawRate_VBOX)).*3;%50;%+3*abs(yawRate_VBOX);%0.4;
+%T_m.time = Time;
+%T_m.signals.values = T;
+
+SWA_m.time = Time;
+SWA_m.signals.values = SWA;
+
+T = 0.4;
+K_yaw_diff = 0;
+K_smooth = 0.1;
+K_smooth_2 = 10;
+squared = 1;
+vy_mod_m.time = Time;
+vy_mod_m.signals.values = vy_mod;
+
+
+sim washout
+
+
 %---------------------------------------------------------
 % CALCULATE THE ERROR VALES FOR THE ESTIMATE OF SLIP ANGLE
 %---------------------------------------------------------
-%Beta_VBOX_smooth=smooth(Beta_VBOX,0.01,'rlowess'); 
-%[e_beta_mean,e_beta_max,time_at_max,error] = errorCalc('YOUR BETA',Beta_VBOX_smooth);
-%disp(' ');
-%fprintf('The MSE of Beta estimation is: %d \n',e_beta_mean);
-%fprintf('The Max error of Beta estimation is: %d \n',e_beta_max);
+Beta_VBOX_smooth=smooth(Beta_VBOX,0.01,'rlowess'); 
+[e_beta_mean,e_beta_max,time_at_max,error] = errorCalc(mybeta(1:end-1),Beta_VBOX_smooth(1:end-2));
+disp(' ');
+fprintf('The MSE of Beta estimation is: %d \n',e_beta_mean);
+fprintf('The Max error of Beta estimation is: %d \n',e_beta_max);
 
 %-----------------
 % PLOT THE RESULTS
 %-----------------
 if 1
+    %figure('Position', [100, 100, 600, 200]);
     plot(Time,Beta_VBOX,'Color','g','LineWidth',1.5,'DisplayName','True');
     hold on;
     grid on;
-    %plot(Time,beta_mod,'Color','b','LineWidth',1.5,'DisplayName','beta^{mod} new');
-    %plot(Time,beta_mod2,'Color','c','LineWidth',1.5,'DisplayName','beta^{mod} old');
+    plot(Time(1:end-1),mybeta,'Color','k','LineWidth',1.1,'DisplayName','UKF');
+    %plot(Time,beta_mod,'Color','b','LineWidth',1.5,'DisplayName','beta^{mod}');
     %plot(vy_kin.time,beta_kin.Data,'Color','m','LineWidth',1.5,'DisplayName','beta^{kin}');
-    plot(Time(1:end-1),mybeta,'Color','r','LineWidth',1.5,'DisplayName','UKF');
+    %plot(vy_wo.time,beta_wo.Data,'Color','r','LineWidth',1.5,'DisplayName','Washout');
     xlim([0,Time(end)])
     legend('show','Location','NorthWest');
     xlabel('Time [sec]');
