@@ -3,9 +3,21 @@ clear all
 
 
 
-
+for i = 1:4
 %Estimation
+if i == 1
 Init_for_washout_filter
+end
+if i == 2
+Init_for_washout_filter2
+end
+if i == 3
+Init_for_washout_filter3
+end
+if i == 4
+Init_for_washout_filter4  
+end
+
 vx = vx_VBOX;
 SWA = SWA_VBOX;
 vy_mod = vx.*(lr*(lf+lr)*Cf*Cr-lf*Cf*mass.*vx.*vx)./(Ratio*((lf+lr)^2*Cr*Cf+mass.*vx.*vx*(lr*Cr-lf*Cf))).*SWA;
@@ -33,12 +45,15 @@ sim measurments
 SWA_m.time = Time;
 SWA_m.signals.values = SWA;
 
-T = 0.4;
-K_yaw_diff = 1;
-K_smooth = 0;
-K_smooth_2 = 0;
+T = 0.4;%0.4
+K_yaw_diff = 0.15/10*3*5;
+K_yaw_diff2 = 0*45.2489;
+K_smooth =0* 1*15;%10 for circle
+K_smooth_2 =0* 1*0.5*2;
+K_smooth_3 = 10*0;
 vy_mod_m.time = Time;
 vy_mod_m.signals.values = vy_mod;
+power = 8.4/8.4;
 
 
 sim washout
@@ -90,5 +105,6 @@ fprintf('The MSE of Beta estimation Wash-out is: %d \n',e_beta_mean);
 fprintf('The Max error of Beta estimation Wash-out is: %d \n',e_beta_max);
 %%
 
+end
 
 

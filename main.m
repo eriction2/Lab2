@@ -2,51 +2,61 @@
 clear all
 
 
-
-
+%change parameters to decide which case shall be simulated
+%e.g. (i=2:4 will play case2,3 and 4)
+for i = 2:3
 %Estimation
-Init_for_washout_filter
+if i == 1
+Init_for_washout_filter %Circle
+end
+if i == 2
+Init_for_washout_filter2 %Slalom
+end
+if i == 3
+Init_for_washout_filter3 %SS
+end
+if i == 4
+Init_for_washout_filter4  %SWD
+end
+
+%Model-based estimator
 vx = vx_VBOX;
 SWA = SWA_VBOX;
 vy_mod = vx.*(lr*(lf+lr)*Cf*Cr-lf*Cf*mass.*vx.*vx)./(Ratio*((lf+lr)^2*Cr*Cf+mass.*vx.*vx*(lr*Cr-lf*Cf))).*SWA;
 beta_mod = atan(vy_mod./vx_VBOX);
-Cr = 100000;
-Cf = Cr;
-vy_mod2 = vx.*(lr*(lf+lr)*Cf*Cr-lf*Cf*mass.*vx.*vx)./(Ratio*((lf+lr)^2*Cr*Cf+mass.*vx.*vx*(lr*Cr-lf*Cf))).*SWA;
-beta_mod2 = atan(vy_mod2./vx_VBOX);
+%Cr = 100000; %For the inital case
+%Cf = Cr;
+%vy_mod2 = vx.*(lr*(lf+lr)*Cf*Cr-lf*Cf*mass.*vx.*vx)./(Ratio*((lf+lr)^2*Cr*Cf+mass.*vx.*vx*(lr*Cr-lf*Cf))).*SWA;
+%beta_mod2 = atan(vy_mod2./vx_VBOX);
 
 
-%Measurment
+%Measurment based estimator
 ay_m.time = Time;
-ay_m.signals.values = ay_VBOX;%+rx.*yawRate_VBOX;
+ay_m.signals.values = ay_VBOX;
 yawRate_m.time = Time;
 yawRate_m.signals.values = yawRate_VBOX;
 vx_m.time = Time;
-vx_m.signals.values = vx_VBOX;%-ry*yawRate_VBOX;
+vx_m.signals.values = vx_VBOX;
 sim measurments
 
-%Wash-out
-%T = abs((yawRate_VBOX)).*3;%50;%+3*abs(yawRate_VBOX);%0.4;
-%T_m.time = Time;
-%T_m.signals.values = T;
-
+%Wash-out estimator
 SWA_m.time = Time;
 SWA_m.signals.values = SWA;
 
-T = 0.4*1.5;
-K_yaw_diff = 0.15*10;
-K_smooth = 1*10;%10 for circle
-K_smooth_2 = 0.5*10;
+T = 0.4;%0.4
+K_yaw_diff = 0.15/10*3*5; %Set this to 0 to disable dynamic T
+K_yaw_diff2 = 1*45.2489;
+K_smooth = 1*15;%10 for circle
+K_smooth_2 = 1*0.5*2;
+K_smooth_3 = 10*1;
 vy_mod_m.time = Time;
 vy_mod_m.signals.values = vy_mod;
-infl_yaw = 2*5;
-
-
+power = 8.4;
 sim washout
 
 
 
-
+%plot the estimator result in beta
 if 1
     figure;
     plot(Time,Beta_VBOX,'Color','g','LineWidth',1.5,'DisplayName','True');
@@ -61,6 +71,8 @@ if 1
     xlabel('Time [sec]');
     ylabel('Slip [1]');
 end
+
+%plot error for the estimators
 if 0
     plot(Time,abs(Beta_VBOX-beta_mod),'Color','b','LineWidth',1.5,'DisplayName','True');
     hold on;
@@ -91,5 +103,6 @@ fprintf('The MSE of Beta estimation Wash-out is: %d \n',e_beta_mean);
 fprintf('The Max error of Beta estimation Wash-out is: %d \n',e_beta_max);
 %%
 
+end
 
 
